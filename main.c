@@ -7,7 +7,9 @@ int main()
 {
 	Command c;
 	memcpy(c.command, "ls", 3);
-	run_command(c);	
+	//run_command(c);	
 
-	validate_serial_key("abc");
+	
+	if (!check_license())
+		prompt_for_serial();
 }
