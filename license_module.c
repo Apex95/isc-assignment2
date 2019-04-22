@@ -36,11 +36,7 @@ int validate_serial_key(char *serial_key)
 	}
 }
 
-int hash_hash_baby(int h, int j)
-{
-	h = h ^ (h >> 20) ^ (h >> 12);
-	return j ^ h ^ (h >> 7) ^ (h >> 4);
-}
+
 
 int generate_license(char *serial_key)
 {
@@ -57,16 +53,13 @@ int generate_license(char *serial_key)
 
 
 	for (int i = 0; i < client_data_len; i++)
-	{
 		client_data[i] ^= (client_data + 541 - client_data_len)[i];
-		client_data[i] = hash_hash_baby(client_data[i], serial_key[i % LICENSE_LENGTH])  ^ serial_key[i % LICENSE_LENGTH];
-	}
-
-	printf("Debug: License hash: [%s]", client_data);
+	
+    printf("Debug: License hash: [%s]", client_data);
 
 	FILE *f = fopen("license.dat", "wb");
 	fwrite(client_data, sizeof(char), client_data_len, f);
-        fclose(f);	
+    fclose(f);	
 
 	printf("License generated.");
 
@@ -107,10 +100,7 @@ int check_license()
 	//for (int i = 2700; i < 4700; i++)
 	//	printf("%d: [%s]\n", i, client_data+i);
         for (int i = 0; i < strlen(client_data); i++)
-        {
                 client_data[i] ^= (client_data + 941 - client_data_len)[i];
-                client_data[i] = hash_hash_baby(client_data[i], 0xB00B1E2) ^ 0xB00B1E2;
-        }
 
         //printf("Debug: Check License hash: [%s]\n", client_data);
 

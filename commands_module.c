@@ -1,4 +1,3 @@
-#include "module_binding.h"
 #include "commands_module.h"
 #include <stdlib.h>
 
