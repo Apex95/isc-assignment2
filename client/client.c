@@ -10,17 +10,24 @@
 #define BUFFER_SIZE 80 
 #define PORT 1234 
 
+#define CMD_BUFFER_SIZE 1000
 
 
 
   
 int main() 
 { 
-    int sockfd, rc; 
+    int sockfd, rc, max_sd, desc_ready; 
     struct sockaddr_in servaddr; 
   
-    unsigned char buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE];
+    char cmd_buffer[CMD_BUFFER_SIZE];
 
+    struct timeval timer;
+    timer.tv_sec = 30;
+    timer.tv_usec = 0;
+
+    fd_set working_set, master_set;
 
     char my_key[] = "my_secret_key";
 
@@ -47,17 +54,70 @@ int main()
     else
         printf("connected to the server..\n"); 
   
+    memset(buffer, 0, sizeof(buffer));
+
     // recv nonce
-    rc = recv(sockfd, buffer, sizeof(unsigned char), 0);
+    rc = recv(sockfd, buffer, sizeof(char), 0);
     
-    unsigned char nonce = buffer[0];
+    char nonce = buffer[0];
 
     // xor with known key
     for (int i = 0; i < strlen(my_key); i++)
         buffer[i] = my_key[i] ^ nonce;
 
+    
     rc = send(sockfd, buffer, sizeof(my_key), 0);
 
+    FD_ZERO(&master_set);
+    FD_SET(sockfd, &master_set);
+    FD_SET(STDIN_FILENO, &master_set);
+    
+    max_sd = sockfd;
+
+    while (1)
+    {
+        memcpy(&working_set, &master_set, sizeof(master_set));
+
+        rc = select(max_sd + 1, &working_set, NULL, NULL, &timer);
+
+        if (rc < 0)
+        {
+            printf("select() failed...\n");
+            exit(0);
+        }
+
+
+        desc_ready = rc;
+
+        for (int i = 0; i <= max_sd && desc_ready > 0; i++)
+        {
+            if (FD_ISSET(i, &working_set))
+            {
+                desc_ready = -1;
+
+                if (i == STDIN_FILENO)
+                {
+                    fgets(buffer, BUFFER_SIZE-1, stdin);
+                    buffer[strlen(buffer)-1] = 0;
+
+                    rc = send(sockfd, buffer, strlen(buffer) + 1, 0);
+                }
+                else
+                {
+                    memset(cmd_buffer, 0, sizeof(cmd_buffer));
+                    rc = recv(i, cmd_buffer, CMD_BUFFER_SIZE, 0);
+
+
+                    printf("[len: %d][%s]\n", rc, cmd_buffer);
+
+                    for (int j = 0; j < 400; j++)
+                        printf("[%c]", cmd_buffer[j]);
+                    //printf("\n");
+                }
+            }
+        }
+
+    }
     // close the socket 
     close(sockfd); 
 } 

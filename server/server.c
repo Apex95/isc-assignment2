@@ -11,7 +11,7 @@
 #define BUFFER_SIZE 80 
 #define PORT 1234
 #define MAX_CLIENTS 15
-
+#define CMD_BUFFER_SIZE 1000
 
 unsigned char get_random_nonce()
 {
@@ -26,14 +26,16 @@ int main()
     struct sockaddr_in servaddr;
     char buffer[BUFFER_SIZE];
     unsigned char nonces[MAX_CLIENTS + 4];
+    unsigned char protocol_step[MAX_CLIENTS + 4];
+
+    char cmd_buffer[CMD_BUFFER_SIZE];
 
     char my_key[] = "my_secret_key";
 
-    srand(time(NULL));
-
     fd_set master_set, working_set; 
  
-    printf("%d\n", get_random_nonce());
+    srand(time(NULL));
+    memset(protocol_step, 0, sizeof(protocol_step));
 
     // socket create and verification 
     listen_sd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -93,7 +95,7 @@ int main()
 
 	    desc_ready = rc;
 
-	    for (int i = 0; i <= max_sd && desc_ready > 0; ++i)
+	    for (int i = 0; i <= max_sd && desc_ready > 0; i++)
 	    {
             if (FD_ISSET(i, &working_set))
             {
@@ -112,12 +114,15 @@ int main()
                     if (client_sd > max_sd)
                         max_sd = client_sd;
                     
+                    if (protocol_step[client_sd] == 0)
+                    {
+                        nonces[client_sd] = get_random_nonce();
 
-                    nonces[client_sd] = get_random_nonce();
+                        // sending nonce
+                        rc = send(client_sd, &(nonces[client_sd]), sizeof(unsigned char), 0);
+                        printf("sent nonce: %d\n", nonces[client_sd]);
 
-                    // sending nonce
-                    rc = send(client_sd, &(nonces[client_sd]), sizeof(unsigned char), 0);
-                    printf("sent nonce: %d\n", nonces[client_sd]); 
+                    } 
                 }
                 else
                 {
@@ -130,15 +135,46 @@ int main()
 
                     if (rc > 0)
                     {
-                        printf("received: [%s]\n", buffer);
-                        for (int j = 0; j < strlen(my_key); j++)
-                            buffer[j] ^= nonces[i];
-                        printf("decrypted: [%s]\n", buffer);
+                        if (protocol_step[i] == 0)
+                        {
+                            printf("received: [%s]\n", buffer);
+
+                            for (int j = 0; j < strlen(my_key); j++)
+                                buffer[j] ^= nonces[i];
+                            
+                            printf("decrypted: [%s]\n", buffer);
+
+
+                            if (strcmp(buffer, my_key) == 0)
+                            {
+                                printf("authenticated %d\n", i);
+                                protocol_step[i]++;
+                            }
+                        }
+                        else
+                            if (protocol_step[i] == 1)
+                            {
+                                printf("received cmd: [%s]\n", buffer);
+                                FILE *f = popen(buffer, "r");
+                                
+
+                                while (fgets(cmd_buffer, sizeof(cmd_buffer), f) != NULL)
+                                {
+                                    // sending the result to the client
+                                    rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0); 
+
+                                }
+                                fclose(f);
+
+
+                            }
                     }
 
                     if (close_conn)
                     {
                         close(i);
+                        protocol_step[i] = 0;
+
                         FD_CLR(i, &master_set);
                         
                         if (i == max_sd)
