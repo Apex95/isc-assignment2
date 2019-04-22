@@ -1,2 +1,3 @@
 all:
-	gcc -Wall main.c commands_module.c license_module.c -o ceva
+	gcc -Wall server/server.c -o server_app
+	gcc -Wall client/client.c -o client_app

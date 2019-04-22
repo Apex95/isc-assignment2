@@ -4,60 +4,48 @@
 #include <stdlib.h> 
 #include <string.h> 
 #include <sys/socket.h> 
-#include <sys/types.h> 
+#include <sys/types.h>
+#include <unistd.h>
+#include <time.h>
 
 #define BUFFER_SIZE 80 
 #define PORT 1234
+#define MAX_CLIENTS 15
 
-#define SA struct sockaddr 
-  
-// Function designed for chat between client and server. 
-void func(int sockfd) 
-{ 
-    char buff[BUFFER_SIZE]; 
-    int n; 
-    
-    for (;;) 
-    { 
-        memset(buff, 0, BUFFER_SIZE); 
-  
-        // read the message from client and copy it in buffer 
-        read(sockfd, buff, sizeof(buff)); 
-        
-        // print buffer which contains the client contents 
-        printf("From client: %s\t To client : ", buff); 
-        bzero(buff, MAX); 
-        n = 0; 
 
-        // copy server message in the buffer 
-        while ((buff[n++] = getchar()) != '\n') ; 
-  
-        // and send that buffer to client 
-        write(sockfd, buff, sizeof(buff)); 
-  
-        // if msg contains "Exit" then server exit and chat ended. 
-        if (strncmp("exit", buff, 4) == 0) { 
-            printf("Server Exit...\n"); 
-            break; 
-        } 
-    } 
-} 
-  
-// Driver function 
+unsigned char get_random_nonce()
+{
+    return rand() % 10;
+}
+
+
+
 int main() 
 { 
-    int sockfd, connfd, len; 
-    struct sockaddr_in servaddr, cli; 
-  
+    int rc, listen_sd, client_sd, max_sd, desc_ready, close_conn; 
+    struct sockaddr_in servaddr;
+    char buffer[BUFFER_SIZE];
+    unsigned char nonces[MAX_CLIENTS + 4];
+
+    char my_key[] = "my_secret_key";
+
+    srand(time(NULL));
+
+    fd_set master_set, working_set; 
+ 
+    printf("%d\n", get_random_nonce());
+
     // socket create and verification 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0); 
-    if (sockfd == -1) { 
+    listen_sd = socket(AF_INET, SOCK_STREAM, 0); 
+    
+    if (listen_sd == -1) { 
         printf("socket creation failed...\n"); 
         exit(0); 
     } 
     else
         printf("Socket successfully created..\n"); 
-    bzero(&servaddr, sizeof(servaddr)); 
+    
+    memset(&servaddr, 0, sizeof(servaddr));
   
     // assign IP, PORT 
     servaddr.sin_family = AF_INET; 
@@ -65,7 +53,7 @@ int main()
     servaddr.sin_port = htons(PORT); 
   
     // Binding newly created socket to given IP and verification 
-    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) { 
+    if ((bind(listen_sd, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0) { 
         printf("socket bind failed...\n"); 
         exit(0); 
     } 
@@ -73,27 +61,97 @@ int main()
         printf("Socket successfully binded..\n"); 
   
     // Now server is ready to listen and verification 
-    if ((listen(sockfd, 5)) != 0) { 
+    if ((listen(listen_sd, MAX_CLIENTS)) != 0) { 
         printf("Listen failed...\n"); 
         exit(0); 
     } 
     else
         printf("Server listening..\n"); 
-    len = sizeof(cli); 
-  
-    // Accept the data packet from client and verification 
-    connfd = accept(sockfd, (SA*)&cli, &len); 
-    if (connfd < 0) { 
-        printf("server acccept failed...\n"); 
-        exit(0); 
-    } 
-    else
-        printf("server acccept the client...\n"); 
-  
-    // Function for chatting between client and server 
-    func(connfd); 
-  
-    // After chatting close the socket 
-    close(sockfd); 
+ 
+
+    FD_ZERO(&master_set);
+    max_sd = listen_sd;
+    FD_SET(listen_sd, &master_set); 
+
+    struct timeval timer;
+    timer.tv_sec = 3;
+    timer.tv_usec = 0;
+
+
+    while (1)
+    {
+        memcpy(&working_set, &master_set, sizeof(master_set));
+
+	    rc = select(max_sd + 1, &working_set, NULL, NULL, &timer);
+
+	    if (rc < 0)
+	    {
+	        printf("select() failed...\n");
+	        exit(0);
+	    }
+
+
+	    desc_ready = rc;
+
+	    for (int i = 0; i <= max_sd && desc_ready > 0; ++i)
+	    {
+            if (FD_ISSET(i, &working_set))
+            {
+                desc_ready = -1;
+
+                if (i == listen_sd)
+                {
+                    client_sd = accept(listen_sd, NULL, NULL);
+
+                    if (client_sd < 0)
+                        break;
+
+                    printf("Accepting connection...\n");
+                    FD_SET(client_sd, &master_set);
+
+                    if (client_sd > max_sd)
+                        max_sd = client_sd;
+                    
+
+                    nonces[client_sd] = get_random_nonce();
+
+                    // sending nonce
+                    rc = send(client_sd, &(nonces[client_sd]), sizeof(unsigned char), 0);
+                    printf("sent nonce: %d\n", nonces[client_sd]); 
+                }
+                else
+                {
+                    close_conn = 0;
+                    
+                    rc = recv(i, buffer, sizeof(buffer), 0);
+                  
+                    if (rc == 0)
+                        close_conn = 1;
+
+                    if (rc > 0)
+                    {
+                        printf("received: [%s]\n", buffer);
+                        for (int j = 0; j < strlen(my_key); j++)
+                            buffer[j] ^= nonces[i];
+                        printf("decrypted: [%s]\n", buffer);
+                    }
+
+                    if (close_conn)
+                    {
+                        close(i);
+                        FD_CLR(i, &master_set);
+                        
+                        if (i == max_sd)
+                        {
+                            while (FD_ISSET(max_sd, &master_set) == 0)
+                                max_sd -= 1;
+                        }
+                    }
+                } 
+            }
+	    }
+
+    }
+    
 } 
 
