@@ -13,8 +13,7 @@
 #define CMD_BUFFER_SIZE 1000
 
 
-
-  
+ 
 int main() 
 { 
     int sockfd, rc, max_sd, desc_ready; 
@@ -105,14 +104,18 @@ int main()
                 else
                 {
                     memset(cmd_buffer, 0, sizeof(cmd_buffer));
-                    rc = recv(i, cmd_buffer, CMD_BUFFER_SIZE, 0);
-
+                    
+                    
+                   
+                    rc = recv(i, cmd_buffer + rc, CMD_BUFFER_SIZE - rc, 0);
+                    
+                   
 
                     printf("[len: %d][%s]\n", rc, cmd_buffer);
 
                     for (int j = 0; j < 400; j++)
-                        printf("[%c]", cmd_buffer[j]);
-                    //printf("\n");
+                        printf("[%d]", cmd_buffer[j]);
+                    printf("\n");
                 }
             }
         }

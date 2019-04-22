@@ -1,3 +1,14 @@
+Tasks:
+
+- implementat autentificare cu nonce
+
+
+
+Bugs:
+
+- problema la trimiterea proceselor (ex: ls) catre client. needs debugging.
+
+
 Disclaimer:
 
 Inca la stadiul de prototip; codul trebuie actualizat (infrumusetat).

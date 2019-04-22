@@ -156,14 +156,25 @@ int main()
                             {
                                 printf("received cmd: [%s]\n", buffer);
                                 FILE *f = popen(buffer, "r");
-                                
+                               
+                                memset(cmd_buffer, 0, sizeof(cmd_buffer));
 
+                                while (fscanf(f, "%s", cmd_buffer) > 0)
+                                {
+                                    printf("[%s]\n", cmd_buffer);
+                                    rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0);
+
+                                    memset(cmd_buffer, 0, sizeof(cmd_buffer));
+                                } 
+
+                                /*
                                 while (fgets(cmd_buffer, sizeof(cmd_buffer), f) != NULL)
                                 {
                                     // sending the result to the client
                                     rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0); 
 
                                 }
+                                */
                                 fclose(f);
 
 
