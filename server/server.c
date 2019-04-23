@@ -13,9 +13,24 @@
 #define MAX_CLIENTS 15
 #define CMD_BUFFER_SIZE 1000
 
+#define DEMO_CMD_NAME_MAX_LEN 4
+char demo_commands[][DEMO_CMD_NAME_MAX_LEN] = {"ls", "pwd", "cat"};
+
+
 unsigned char get_random_nonce()
 {
     return rand() % 10;
+}
+
+int is_demo_command(char *cmd)
+{
+    int len = sizeof(demo_commands) / DEMO_CMD_NAME_MAX_LEN;
+
+    for (int i = 0; i < len; i++)
+        if (strstr(cmd, demo_commands[i]) == cmd)
+            return 1;
+
+    return 0;
 }
 
 
@@ -38,6 +53,8 @@ int main()
     srand(time(NULL));
     memset(protocol_step, 0, sizeof(protocol_step));
 
+    printf("Launching the administration server...\n");
+
     // socket create and verification 
     listen_sd = socket(AF_INET, SOCK_STREAM, 0); 
     
@@ -46,7 +63,7 @@ int main()
         exit(0); 
     } 
     else
-        printf("Socket successfully created..\n"); 
+        printf("Socket successfully created...\n"); 
     
     memset(&servaddr, 0, sizeof(servaddr));
   
@@ -61,7 +78,7 @@ int main()
         exit(0); 
     } 
     else
-        printf("Socket successfully binded..\n"); 
+        printf("Socket successfully binded...\n"); 
   
     // Now server is ready to listen and verification 
     if ((listen(listen_sd, MAX_CLIENTS)) != 0) { 
@@ -69,7 +86,7 @@ int main()
         exit(0); 
     } 
     else
-        printf("Server listening..\n"); 
+        printf("Listening...\n"); 
  
 
     FD_ZERO(&master_set);
@@ -157,34 +174,33 @@ int main()
                             {
                                 printf("received cmd: [%s]\n", buffer);
 
-                                memcpy(actual_cmd, buffer, sizeof(buffer));
-                                memcpy(actual_cmd + strlen(actual_cmd), " 2>&1", 6);
 
-                                FILE *f = popen(actual_cmd, "r");
-                               
-                                memset(cmd_buffer, 0, sizeof(cmd_buffer));
-
-                                /*
-                                while (fscanf(f, "%s", cmd_buffer) > 0)
+                                // todo: check if allowed
+                                if (!is_demo_command(buffer))
                                 {
-                                    printf("%s", cmd_buffer);
+                                    strcpy(cmd_buffer, "Not a demo command.\n");
                                     rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0);
-
-                                    memset(cmd_buffer, 0, sizeof(cmd_buffer));
                                 }
-                                printf("\n");
-                                */
-                                
-                                while (fgets(cmd_buffer, sizeof(cmd_buffer), f) != NULL)
+                                else
                                 {
-                                    printf("%s", cmd_buffer);
+                                    memcpy(actual_cmd, buffer, sizeof(buffer));
+                                    memcpy(actual_cmd + strlen(actual_cmd), " 2>&1", 6);
 
-                                    // sending the result to the client
-                                    rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0); 
-
-                                }
+                                    FILE *f = popen(actual_cmd, "r");
+                               
+                                    memset(cmd_buffer, 0, sizeof(cmd_buffer)); 
                                 
-                                fclose(f);
+                                    while (fgets(cmd_buffer, sizeof(cmd_buffer), f) != NULL)
+                                    {
+                                        printf("%s", cmd_buffer);
+
+                                        // sending the result to the client
+                                        rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0); 
+
+                                    }
+                                
+                                    fclose(f);
+                                }
 
 
                             }

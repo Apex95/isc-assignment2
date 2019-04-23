@@ -37,7 +37,7 @@ int main()
         exit(0); 
     } 
     else
-        printf("Socket successfully created..\n"); 
+        printf("Socket successfully created...\n"); 
     memset(&servaddr, 0, sizeof(servaddr)); 
   
     // assign IP, PORT 
@@ -47,11 +47,11 @@ int main()
   
     // connect the client socket to server socket 
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) { 
-        printf("connection with the server failed...\n"); 
+        printf("Connection to the server failed...\n"); 
         exit(0); 
     } 
     else
-        printf("connected to the server..\n"); 
+        printf("Connected to the server.\n"); 
 
     
 
@@ -59,14 +59,15 @@ int main()
 
     // recv nonce
     rc = recv(sockfd, buffer, sizeof(char), 0);
-    
+    printf("Receiving challenge...\n");
+
     char nonce = buffer[0];
 
     // xor with known key
     for (int i = 0; i < strlen(my_key); i++)
         buffer[i] = my_key[i] ^ nonce;
 
-    
+    printf("Replying...\n");
     rc = send(sockfd, buffer, sizeof(my_key), 0);
 
     FD_ZERO(&master_set);
@@ -75,7 +76,7 @@ int main()
     
     max_sd = sockfd;
 
-
+    printf("Done! Type your commands below:\n\n");
     while (1)
     {
         memcpy(&working_set, &master_set, sizeof(master_set));
