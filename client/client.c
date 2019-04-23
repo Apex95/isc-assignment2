@@ -52,7 +52,9 @@ int main()
     } 
     else
         printf("connected to the server..\n"); 
-  
+
+    
+
     memset(buffer, 0, sizeof(buffer));
 
     // recv nonce
@@ -72,6 +74,7 @@ int main()
     FD_SET(STDIN_FILENO, &master_set);
     
     max_sd = sockfd;
+
 
     while (1)
     {
@@ -97,25 +100,41 @@ int main()
                 if (i == STDIN_FILENO)
                 {
                     fgets(buffer, BUFFER_SIZE-1, stdin);
-                    buffer[strlen(buffer)-1] = 0;
+                    buffer[strlen(buffer)-1] = '\0';
 
+                    printf("----------------\n");
+                    printf(">> Executing [%s]\n", buffer);
                     rc = send(sockfd, buffer, strlen(buffer) + 1, 0);
+
+                    printf("----------------\n");
                 }
                 else
                 {
-                    memset(cmd_buffer, 0, sizeof(cmd_buffer));
-                    
-                    
+                    memset(cmd_buffer, 0, sizeof(cmd_buffer));      
                    
-                    rc = recv(i, cmd_buffer + rc, CMD_BUFFER_SIZE - rc, 0);
                     
-                   
+                    rc = recv(i, cmd_buffer, sizeof(cmd_buffer), 0);
 
-                    printf("[len: %d][%s]\n", rc, cmd_buffer);
+                    int offset = 0;
+                    
+                    for (int j = 0; j < rc; j++)
+                    {
+                        if (cmd_buffer[j + offset] == '\n' && cmd_buffer[j + offset + 1] == '\0')
+                           offset++;
 
-                    for (int j = 0; j < 400; j++)
-                        printf("[%d]", cmd_buffer[j]);
-                    printf("\n");
+
+                        if (j + offset < rc)
+                        {
+                            cmd_buffer[j] = cmd_buffer[j+offset];
+                            
+                            if (cmd_buffer[j] == '\0')
+                                cmd_buffer[j] = '\n';
+                        }
+                        else
+                            cmd_buffer[j] = '\0';
+                    }      
+
+                    printf("%s", cmd_buffer);
                 }
             }
         }

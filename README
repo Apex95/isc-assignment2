@@ -1,13 +1,13 @@
 Tasks:
 
 - implementat autentificare cu nonce
+- implementat 'bash' intre client si server (mai putin cd)
 
 
 
 Bugs:
 
-- problema la trimiterea proceselor (ex: ls) catre client. needs debugging.
-
+- none?
 
 Disclaimer:
 

@@ -25,6 +25,7 @@ int main()
     int rc, listen_sd, client_sd, max_sd, desc_ready, close_conn; 
     struct sockaddr_in servaddr;
     char buffer[BUFFER_SIZE];
+    char actual_cmd[sizeof(buffer) + 5];
     unsigned char nonces[MAX_CLIENTS + 4];
     unsigned char protocol_step[MAX_CLIENTS + 4];
 
@@ -155,26 +156,34 @@ int main()
                             if (protocol_step[i] == 1)
                             {
                                 printf("received cmd: [%s]\n", buffer);
-                                FILE *f = popen(buffer, "r");
+
+                                memcpy(actual_cmd, buffer, sizeof(buffer));
+                                memcpy(actual_cmd + strlen(actual_cmd), " 2>&1", 6);
+
+                                FILE *f = popen(actual_cmd, "r");
                                
                                 memset(cmd_buffer, 0, sizeof(cmd_buffer));
 
+                                /*
                                 while (fscanf(f, "%s", cmd_buffer) > 0)
                                 {
-                                    printf("[%s]\n", cmd_buffer);
+                                    printf("%s", cmd_buffer);
                                     rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0);
 
                                     memset(cmd_buffer, 0, sizeof(cmd_buffer));
-                                } 
-
-                                /*
+                                }
+                                printf("\n");
+                                */
+                                
                                 while (fgets(cmd_buffer, sizeof(cmd_buffer), f) != NULL)
                                 {
+                                    printf("%s", cmd_buffer);
+
                                     // sending the result to the client
                                     rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0); 
 
                                 }
-                                */
+                                
                                 fclose(f);
 
 
