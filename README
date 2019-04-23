@@ -2,6 +2,7 @@ Tasks:
 
 - implementat autentificare cu nonce
 - implementat 'bash' intre client si server (mai putin cd)
+- implementat partial demo mode pt server (restrictii comenzi)
 
 
 
