@@ -1,3 +1,21 @@
+Ce e?:
+
+E un simplu program (cu vulnerabilitati) compus dintr-un client si un server; clientul se
+'autentifica' si pe urma poate trimite serverului comenzi pe care sa le execute pe
+calculatorul pe care el ruleaza.
+
+
+Mod de lucru:
+
+Serverul porneste si asculta pe un port. Tot atunci verifica daca are un fisier de licenta
+generat pt combinatia utilizator+hostname de pe care ruleaza. 2 cazuri:
+    - daca exista si e valid -> permite & executa orice comanda primita de la client
+    - daca nu -> permite doar ls, cat si pwd
+
+Clientul, la conectare, primeste un nonce pe care il cripteaza folosind xor, cu cheia sa
+si pe care il trimite inapoi la server, ce face verificarea si autentificarea.
+
+
 Tasks:
 
 - implementat autentificare cu nonce
