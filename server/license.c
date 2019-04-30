@@ -24,9 +24,6 @@ int validate_serial_key(char *serial_key)
     char server_generated_serial_key[21];
     fgets(server_generated_serial_key, LICENSE_LENGTH, f);
 
-    printf("Debug: Key from server: %s\n", server_generated_serial_key);
-
-
 
     // good luck
     if (strcmp(serial_key, server_generated_serial_key) == 0)
@@ -109,7 +106,6 @@ int prompt_for_serial()
     char serial[LICENSE_LENGTH];
 
     scanf("%s", serial);
-
     return validate_serial_key(serial);
 }
 
