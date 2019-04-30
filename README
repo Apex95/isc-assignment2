@@ -1,16 +1,13 @@
 Tasks:
 
 - implementat autentificare cu nonce
-- implementat 'bash' intre client si server (mai putin cd)
-- implementat partial demo mode pt server (restrictii comenzi)
+- implementat 'bash' intre client si server (mai putin cd-like si comenzi care implica Ctrl-C)
+- implementat demo mode/licensing pt server (restrictii comenzi)
 
 
 
 Bugs:
 
-- none?
+- doar cele mentionate... cred
 
-Disclaimer:
-
-Inca la stadiul de prototip; codul trebuie actualizat (infrumusetat).
 
