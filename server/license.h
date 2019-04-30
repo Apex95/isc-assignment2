@@ -3,5 +3,6 @@
 int validate_serial_key(char *serial_key);
 int generate_license();
 int check_license();
-void prompt_for_serial();
+int prompt_for_serial();
 #endif
+

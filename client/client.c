@@ -38,6 +38,7 @@ int main()
     } 
     else
         printf("Socket successfully created...\n"); 
+    
     memset(&servaddr, 0, sizeof(servaddr)); 
   
     // assign IP, PORT 
@@ -141,7 +142,7 @@ int main()
         }
 
     }
-    // close the socket 
+
     close(sockfd); 
 } 
 

@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
+#include "license.h"
 
 #define BUFFER_SIZE 80 
 #define PORT 1234
@@ -15,6 +16,7 @@
 
 #define DEMO_CMD_NAME_MAX_LEN 4
 char demo_commands[][DEMO_CMD_NAME_MAX_LEN] = {"ls", "pwd", "cat"};
+int is_demo_mode = 0;
 
 
 unsigned char get_random_nonce()
@@ -72,21 +74,28 @@ int main()
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
     servaddr.sin_port = htons(PORT); 
   
-    // Binding newly created socket to given IP and verification 
-    if ((bind(listen_sd, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0) { 
+    // Binding 
+    if ((bind(listen_sd, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0) 
+    { 
         printf("socket bind failed...\n"); 
         exit(0); 
     } 
     else
         printf("Socket successfully binded...\n"); 
   
-    // Now server is ready to listen and verification 
+    // Listening
     if ((listen(listen_sd, MAX_CLIENTS)) != 0) { 
         printf("Listen failed...\n"); 
         exit(0); 
     } 
     else
         printf("Listening...\n"); 
+
+
+    // license check
+    if (!check_license())
+        if (!prompt_for_serial())
+            is_demo_mode = 1;
  
 
     FD_ZERO(&master_set);
@@ -176,7 +185,7 @@ int main()
 
 
                                 // todo: check if allowed
-                                if (!is_demo_command(buffer))
+                                if (is_demo_mode && !is_demo_command(buffer))
                                 {
                                     strcpy(cmd_buffer, "Not a demo command.\n");
                                     rc = send(i, cmd_buffer, strlen(cmd_buffer)+1, 0);
