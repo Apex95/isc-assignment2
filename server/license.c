@@ -28,8 +28,8 @@ int validate_serial_key(char *serial_key)
 
 
 
-
-    if (strcmp(serial_key, server_generated_serial_key) != 0)
+    // good luck
+    if (strcmp(serial_key, server_generated_serial_key) == 0)
     {
         printf("Serial key is valid. Generating a license...\n");
         generate_license(serial_key);
@@ -50,9 +50,6 @@ int generate_license(char *serial_key)
     getlogin_r(client_data + strlen(client_data), LOGIN_NAME_MAX);
 
 
-    //printf("%s", client_data);
-
-
     int client_data_len = strlen(client_data);
 
 
@@ -67,7 +64,6 @@ int generate_license(char *serial_key)
 
     printf("License generated.");
 
-    //check_license();
 
     return 0;
 
